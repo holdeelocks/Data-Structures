@@ -10,7 +10,7 @@ class AVLTreeTests(unittest.TestCase):
     def test_update_height(self):
         self.assertEqual(self.tree.height, -1)
         self.tree.node = Node(5)
-        self.tree.update_height()
+        self.tree.update_height(False)
         self.assertEqual(self.tree.height, 0)
 
         self.tree.node.left = AVLTree(Node(3))
@@ -73,6 +73,7 @@ class AVLTreeTests(unittest.TestCase):
         self.tree.node.left.node.right.node.left = AVLTree(Node('y'))
         self.tree.node.left.node.right.node.right = AVLTree(Node('z'))
 
+        self.tree.update_height()
         self.tree.rebalance()
 
         self.assertEqual(self.tree.node.key, 4)

@@ -52,36 +52,35 @@ class AVLTree:
         else:
             return self.height
 
-    def update_height(self):
-        # if not self.node.left and not self.node.right:
-        #     self.height += 1
-        # else:
-        #     self.height = max(self.node.left.get_height() if self.node.left else 0,
-        #                       self.node.right.get_height() if self.node.right else 0) + 1
-        if self.node.left and self.node.right:
-            self.height = max(self.node.left.get_height(),
-                              self.node.right.get_height()) + 1
-        elif self.node.left:
-            self.height = self.node.left.get_height() + 1
-        elif self.node.right:
-            self.height = self.node.right.get_height() + 1
-        elif self.node:
-            self.height = 0
+    def update_height(self, recurse=True):
+        if not self.node == None:
+            if recurse:
+                if self.node.left != None:
+                    self.node.left.update_height()
+                if self.node.right != None:
+                    self.node.right.update_height()
+
+            self.height = max(-1 if not self.node.left else self.node.left.height,
+                              -1 if not self.node.right else self.node.right.height) + 1
+        else:
+            self.height = -1
 
     """
   Updates the balance factor on the AVLTree class
   """
 
-    def update_balance(self):
-        if not self.node or (not self.node.left and not self.node.right):
-            self.balance = 0
-        elif self.node.left and self.node.right:
-            self.balance = self.node.left.height - self.node.right.height
+    def update_balance(self, recurse=True):
+        if not self.node == None:
+            if recurse:
+                if self.node.left != None:
+                    self.node.left.update_balance()
+                if self.node.right != None:
+                    self.node.right.update_balance()
+
+            self.balance = (self.node.left.height if self.node.left else -1) - \
+                (self.node.right.height if self.node.right else -1)
         else:
-            if self.node.left:
-                self.balance = self.node.left.height
-            if self.node.right:
-                self.balance = 0 - self.node.right.height
+            self.balance = 0
 
     """
   Perform a left rotation, making the right child of this
@@ -90,19 +89,13 @@ class AVLTree:
   """
 
     def _left_rotate(self):
-        new_root = self.node.right.node
-        self.node.right.node = new_root.left.node
-        if new_root.left.node != None:
-            self.node.right.node = new_root.left.node
-        new_root.left.node = self.node
-        self.node = new_root
+        A = self.node
+        B = self.node.right.node
+        T = B.left.node
 
-        # self.balance = self.balance + 1 + max(self.balance, 0)
-        # self.node.left.balance = self.node.left.balance + \
-        #     1 - min(self.node.left.balance, 0)
-
-        # self.update_height()
-        # self.node.left.update_height()
+        self.node = B
+        B.left.node = A
+        A.right.node = T
 
     """
   Perform a right rotation, making the left child of this
@@ -111,19 +104,13 @@ class AVLTree:
   """
 
     def _right_rotate(self):
-        new_root = self.node.left.node
-        self.node.left.node = new_root.right.node
-        if new_root.right.node != None:
-            self.node.left.node = new_root.right.node
-        new_root.right.node = self.node
-        self.node = new_root
+        A = self.node
+        B = self.node.left.node
+        T = B.right.node
 
-        # self.balance = self.balance + max(self.balance, 0)
-        # self.node.right.balance = self.node.right.balance - \
-        #     min(self.node.right.balance, 0)
-
-        # self.update_height()
-        # self.node.right.update_height()
+        self.node = B
+        B.right.node = A
+        A.left.node = T
 
     """
   Sets in motion the rebalancing logic to ensure the
@@ -132,19 +119,28 @@ class AVLTree:
   """
 
     def rebalance(self):
-        self.update_height()
-        if self.balance < 0:
-            if self.node.right.balance > 0:
-                self.node.right._right_rotate()
-                self.node._left_rotate()
-            else:
-                self.node._left_rotate()
-        elif self.balance > 0:
-            if self.node.left.balance < 0:
-                self.node.left._left_rotate()
-                self.node._right_rotate()
-            else:
-                self.node._right_rotate()
+        self.update_height(False)
+        self.update_balance(False)
+
+        while self.balance < -1 or self.balance > 1:
+            if self.balance > 1:
+                if self.node.left.balance < 0:
+                    self.node.left._left_rotate()
+                    self.update_height()
+                    self.update_balance()
+                self._right_rotate()
+                self.update_height()
+                self.update_balance()
+
+            if self.balance < -1:
+                if self.node.right.balance > 0:
+                    self.node.right._right_rotate()
+                    self.update_height()
+                    self.update_balance()
+                self._left_rotate()
+                self.update_height()
+                self.update_balance()
+
     """
   Uses the same insertion logic as a binary search tree
   after the value is inserted, we need to check to see
@@ -152,27 +148,17 @@ class AVLTree:
   """
 
     def insert(self, key):
+        newnode = Node(key)
         if not self.node:
-            self.node = Node(key)
+            self.node = newnode
+            self.node.left = AVLTree()
+            self.node.right = AVLTree()
         elif key < self.node.key:
-            if self.node.left:
-                self.node.left.insert(key)
-                # self.update_height()
-            else:
-                self.node.left = AVLTree(Node(key))
-                # self.node.left.rebalance()
-        else:
-            if self.node.right:
-                self.node.right.insert(key)
-                # self.node.right.update_height()
-            else:
-                self.node.right = AVLTree(Node(key))
-                # self.node.right.rebalance()
+            self.node.left.insert(key)
+        elif key > self.node.key:
+            self.node.right.insert(key)
 
-        # self.update_height()
-        self.update_balance()
-        if self.balance > 1 or self.balance < -1:
-            self.rebalance()
+        self.rebalance()
 
     def is_leaf(self):
-        return not self.node.left and not self.node.right
+        return (self.height == 0)
