@@ -2,9 +2,8 @@ from collections import OrderedDict
 
 
 class LRUCache(OrderedDict):
-    def __init__(self, limit=10, *args, **kwds):
+    def __init__(self, limit=10):
         self.maxsize = limit
-        super().__init__(*args, **kwds)
 
     """
   Retrieves the value associated with the given key. Also
